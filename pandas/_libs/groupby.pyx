@@ -671,7 +671,7 @@ def _group_mean(floating[:, :] out,
             lab = labels[i]
             if lab < 0:
                 continue
-            if mask[i] == 0:
+            if mask[i] == 1:
                 continue
 
             counts[lab] += 1

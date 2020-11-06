@@ -457,7 +457,8 @@ class BaseGrouper:
         assert kind in ["transform", "aggregate"]
         orig_values = values
 
-        print(f"how={how}")
+        print(f"values={values}")
+        print(values._mask)
 
         if values.ndim > 2:
             raise NotImplementedError("number of dimensions is currently limited to 2")
@@ -546,7 +547,10 @@ class BaseGrouper:
         if kind == "aggregate":
             result = maybe_fill(np.empty(out_shape, dtype=out_dtype), fill_value=np.nan)
             counts = np.zeros(self.ngroups, dtype=np.int64)
-            result = self._aggregate(result, counts, values, codes, func, min_count)
+            mask = values._mask if hasattr(values, "_mask") else None
+            result = self._aggregate(
+                result, counts, values, codes, func, mask, min_count
+            )
         elif kind == "transform":
             result = maybe_fill(
                 np.empty_like(values, dtype=out_dtype), fill_value=np.nan
@@ -601,16 +605,15 @@ class BaseGrouper:
         return self._cython_operation("transform", values, how, axis, **kwargs)
 
     def _aggregate(
-        self, result, counts, values, comp_ids, agg_func, min_count: int = -1
+        self, result, counts, values, comp_ids, agg_func, mask=None, min_count: int = -1
     ):
-        print([n for n, f in libgroupby.__dict__.items() if agg_func is f])
         if agg_func is libgroupby.group_nth:
             # different signature from the others
             # TODO: should we be using min_count instead of hard-coding it?
             agg_func(result, counts, values, comp_ids, rank=1, min_count=-1)
         elif agg_func is libgroupby.group_mean_float64:
-            mask = np.array([True for _ in range(len(result))], dtype=bool)
-            print(mask)
+            if mask is None:
+                mask = np.array([False for _ in range(len(result))], dtype=bool)
             agg_func(result, counts, values, comp_ids, mask=mask, min_count=-1)
         else:
             agg_func(result, counts, values, comp_ids, min_count)
