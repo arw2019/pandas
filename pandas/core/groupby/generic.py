@@ -1026,7 +1026,6 @@ class DataFrameGroupBy(GroupBy[DataFrame]):
 
         data: BlockManager = self._get_data_to_aggregate()
 
-        print(f"how={how}")
         if numeric_only:
             data = data.get_numeric_data(copy=False)
 
@@ -1064,7 +1063,6 @@ class DataFrameGroupBy(GroupBy[DataFrame]):
 
         def blk_func(bvalues: ArrayLike) -> ArrayLike:
 
-            print("blk_func")
             try:
                 result, _ = self.grouper.aggregate(
                     bvalues, how, axis=1, min_count=min_count
