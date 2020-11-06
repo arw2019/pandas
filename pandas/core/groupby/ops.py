@@ -457,9 +457,6 @@ class BaseGrouper:
         assert kind in ["transform", "aggregate"]
         orig_values = values
 
-        print(f"values={values}")
-        print(values._mask)
-
         if values.ndim > 2:
             raise NotImplementedError("number of dimensions is currently limited to 2")
         elif values.ndim == 2:
