@@ -457,6 +457,8 @@ class BaseGrouper:
         assert kind in ["transform", "aggregate"]
         orig_values = values
 
+        print(f"how={how}")
+
         if values.ndim > 2:
             raise NotImplementedError("number of dimensions is currently limited to 2")
         elif values.ndim == 2:
@@ -601,10 +603,15 @@ class BaseGrouper:
     def _aggregate(
         self, result, counts, values, comp_ids, agg_func, min_count: int = -1
     ):
+        print([n for n, f in libgroupby.__dict__.items() if agg_func is f])
         if agg_func is libgroupby.group_nth:
             # different signature from the others
             # TODO: should we be using min_count instead of hard-coding it?
             agg_func(result, counts, values, comp_ids, rank=1, min_count=-1)
+        elif agg_func is libgroupby.group_mean_float64:
+            mask = np.array([True for _ in range(len(result))], dtype=bool)
+            print(mask)
+            agg_func(result, counts, values, comp_ids, mask=mask, min_count=-1)
         else:
             agg_func(result, counts, values, comp_ids, min_count)
 

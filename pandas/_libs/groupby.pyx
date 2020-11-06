@@ -647,6 +647,7 @@ def _group_mean(floating[:, :] out,
                 int64_t[:] counts,
                 ndarray[floating, ndim=2] values,
                 const int64_t[:] labels,
+                const uint8_t[:] mask,
                 Py_ssize_t min_count=-1):
     cdef:
         Py_ssize_t i, j, N, K, lab, ncounts = len(counts)
@@ -669,6 +670,8 @@ def _group_mean(floating[:, :] out,
         for i in range(N):
             lab = labels[i]
             if lab < 0:
+                continue
+            if mask[i] == 0:
                 continue
 
             counts[lab] += 1
