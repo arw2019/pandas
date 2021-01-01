@@ -1,6 +1,8 @@
 import distutils.version
 import importlib
+import sys
 import types
+from typing import Optional
 import warnings
 
 # Update install.rst when updating versions!
@@ -24,8 +26,8 @@ VERSIONS = {
     "scipy": "1.2.0",
     "sqlalchemy": "1.2.8",
     "tables": "3.5.1",
-    "tabulate": "0.8.7",
-    "xarray": "0.12.3",
+    "tabulate": "0.8.3",
+    "xarray": "0.12.0",
     "xlrd": "1.2.0",
     "xlwt": "1.3.0",
     "xlsxwriter": "1.0.2",
@@ -43,6 +45,7 @@ INSTALL_MAPPING = {
     "pandas_gbq": "pandas-gbq",
     "sqlalchemy": "SQLAlchemy",
     "jinja2": "Jinja2",
+    "pyarrow.csv": "pyarrow",
 }
 
 
@@ -58,7 +61,11 @@ def _get_version(module: types.ModuleType) -> str:
 
 
 def import_optional_dependency(
-    name: str, extra: str = "", raise_on_missing: bool = True, on_version: str = "raise"
+    name: str,
+    extra: str = "",
+    raise_on_missing: bool = True,
+    on_version: str = "raise",
+    min_version: Optional[str] = None,
 ):
     """
     Import an optional dependency.
@@ -70,8 +77,7 @@ def import_optional_dependency(
     Parameters
     ----------
     name : str
-        The module name. This should be top-level only, so that the
-        version may be checked.
+        The module name.
     extra : str
         Additional text to include in the ImportError message.
     raise_on_missing : bool, default True
@@ -85,6 +91,8 @@ def import_optional_dependency(
         * ignore: Return the module, even if the version is too old.
           It's expected that users validate the version locally when
           using ``on_version="ignore"`` (see. ``io/html.py``)
+    min_version: Optional[str]
+        Specify the minimum version
 
     Returns
     -------
@@ -109,10 +117,16 @@ def import_optional_dependency(
             raise ImportError(msg) from None
         else:
             return None
-
-    minimum_version = VERSIONS.get(name)
+    # Handle submodules: if we have submodule, grab parent module from sys.modules
+    parent = name.split(".")[0]
+    if parent != name:
+        install_name = parent
+        module_to_get = sys.modules[install_name]
+    else:
+        module_to_get = module
+    minimum_version = min_version if min_version is not None else VERSIONS.get(name)
     if minimum_version:
-        version = _get_version(module)
+        version = _get_version(module_to_get)
         if distutils.version.LooseVersion(version) < minimum_version:
             assert on_version in {"warn", "raise", "ignore"}
             msg = (
